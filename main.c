@@ -12,6 +12,7 @@
 #include "nokia5110.h"
 
 char pw_list[4] = {'+', 'o', '$', '*'};
+float deadzone = 0.150f;
 
 uint8_t glyph[] = { 0b00010000, 0b00100100, 0b11100000, 0b00100100, 0b00010000 };
 
@@ -77,16 +78,19 @@ int main(void) {
   USART_Init();
   adc_init();
 
+  char* password = generate_password();
+
   disp_startup();
   char *input = malloc(4);
   for (int i = 0; i < 4; i++) {input[i] = 'o';}    
 
-  DDRB &= ~(1 << PB1); // seta PB1 como entrada
+  DDRD |= (1 << PD0);
+  DDRD |= (1 << PD1);
+  DDRD |= (1 << PD2);
 
   while (1)
   {
-    _delay_ms(1000);
-    char* password = generate_password();
+    _delay_ms(50);
     disp_update_input(input);
 
     adc_set_channel(0);
@@ -94,15 +98,44 @@ int main(void) {
     adc_set_channel(1);
     float y = adc_read() * 0.0009765625;
 
+    if (x < 1 - deadzone && x > deadzone && y < 1 - deadzone && y > deadzone)
+    {
+        PORTD &= ~(1 << PD0); 
+        PORTD &= ~(1 << PD1);
+        PORTD &= ~(1 << PD2);  
+    }
+    else
+    {
+        PORTD |= (1 << PD0);
+        if (y < deadzone)
+        {
+            PORTD |= (1 << PD2);
+            PORTD |= (1 << PD1);
+        }
+        else if (y > 1 - deadzone)
+        {
+            PORTD |= (1 << PD2);
+            PORTD &= ~(1 << PD1);  
+        }
+        else if (x < deadzone)
+        {
+            PORTD &= ~(1 << PD1); 
+            PORTD &= ~(1 << PD2); 
+        }
+        else if (x > 1 - deadzone)
+        {
+            PORTD |= (1 << PD1);
+            PORTD &= ~(1 << PD2);  
+        }
+        
+    }
+
     print("\nx: ");
     printfloat(x);
     print("  y: ");
     printfloat(y);
-    // Código do simulador tem um BUG, sempre vai retornar
-    // ON no estado do switch
-    if(PINB & (1<<PB1))
-      print(" OFF");
-    else
-      print(" ON");
+
+
+
   }
 }
