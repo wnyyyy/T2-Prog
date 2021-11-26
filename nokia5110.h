@@ -90,4 +90,5 @@ void nokia_lcd_render(void);
  */
 void nokia_lcd_custom(char code, uint8_t* glyph);
 
+void nokia_lcd_drawline(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 #endif

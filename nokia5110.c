@@ -10,7 +10,6 @@
  *
  * Original library written by SkewPL, http://skew.tk
  */
-
 #include "nokia5110.h"
 
 #include <avr/pgmspace.h>
