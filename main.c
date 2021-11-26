@@ -1,22 +1,14 @@
-/* Nokia 5110 LCD AVR Library example
- *
- * Copyright (C) 2015 Sergey Denisov.
- * Written by Sergey Denisov aka LittleBuster (DenisovS21@gmail.com)
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public Licence
- * as published by the Free Software Foundation; either version 3
- * of the Licence, or (at your option) any later version.
- *
- * Original library written by SkewPL, http://skew.tk
- * Custom char code by Marcelo Cohen - 2021
- */
-
+#define __AVR_ATmega328P__
+#include <avr/interrupt.h>
 #include <avr/io.h>
+#include <stdint.h>
 #include <util/delay.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "adc.h"
+#include "print.h"
+#include "usart.h"
 #include "nokia5110.h"
 
 char pw_list[4] = {'+', 'o', '$', '*'};
@@ -54,7 +46,7 @@ void disp_show_password(char* password)
     {
         nokia_lcd_set_cursor(i*20 + 7, 12);
         nokia_lcd_write_char(password[i], 2);
-    }    
+    }
     
     nokia_lcd_render(); 
 }
@@ -81,16 +73,36 @@ char* generate_password()
     return pw;
 }
 
-int main(void)
-{
-    disp_startup();
-    char *input = malloc(4);
-    for (int i = 0; i < 4; i++) {input[i] = 'o';}
-    
-    while (1)
-    {
-        _delay_ms(1000);
-        char* password = generate_password();
-        disp_update_input(input);
-    }
+int main(void) {
+  USART_Init();
+  adc_init();
+
+  disp_startup();
+  char *input = malloc(4);
+  for (int i = 0; i < 4; i++) {input[i] = 'o';}    
+
+  DDRB &= ~(1 << PB1); // seta PB1 como entrada
+
+  while (1)
+  {
+    _delay_ms(1000);
+    char* password = generate_password();
+    disp_update_input(input);
+
+    adc_set_channel(0);
+    float x = adc_read() * 0.0009765625;
+    adc_set_channel(1);
+    float y = adc_read() * 0.0009765625;
+
+    print("\nx: ");
+    printfloat(x);
+    print("  y: ");
+    printfloat(y);
+    // Código do simulador tem um BUG, sempre vai retornar
+    // ON no estado do switch
+    if(PINB & (1<<PB1))
+      print(" OFF");
+    else
+      print(" ON");
+  }
 }

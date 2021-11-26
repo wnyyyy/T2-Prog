@@ -12,8 +12,11 @@ CFLAGS = -g -mmcu=$(MCU) -Wall -Os -fno-inline-small-functions -fno-split-wide-t
 
 all:
 	$(CC) $(CFLAGS) -c main.c
+	$(CC) $(CFLAGS) -c usart.c
 	$(CC) $(CFLAGS) -c nokia5110.c
-	$(CC) $(CFLAGS) main.o nokia5110.o -o code.elf
+	$(CC) $(CFLAGS) -c adc.c
+	$(CC) $(CFLAGS) -c print.c
+	$(CC) $(CFLAGS) main.o usart.o adc.o print.o nokia5110.o -o code.elf
 	$(OBJCOPY) -R .eeprom -O ihex code.elf code.hex
 	$(OBJDUMP) -d code.elf > code.lst
 	$(OBJDUMP) -h code.elf > code.sec

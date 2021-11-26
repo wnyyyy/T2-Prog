@@ -1,0 +1,10 @@
+{
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        "stdint.h": "c",
+        "io.h": "c",
+        "interrupt.h": "c",
+        "delay.h": "c",
+        "usart.h": "c"
+    }
+}
