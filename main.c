@@ -33,14 +33,15 @@ void disp_startup()
     nokia_lcd_init();
     nokia_lcd_clear();
     nokia_lcd_custom(1, glyph);
-    nokia_lcd_write_string("Tentativas: ", 1);
+    nokia_lcd_write_string("Tentativas:", 1);
     nokia_lcd_drawline(0,9,84,9);
-    disp_update(0);
+    disp_update_tentativas(0);
 }
 
-void disp_update(int tentativas)
+void disp_update_tentativas(int tentativas)
 {
     char strTentativas[2];
+    nokia_lcd_set_cursor(68,0);
     sprintf(strTentativas, "%d", tentativas);
     nokia_lcd_write_string(strTentativas, 1);
     nokia_lcd_render(); 
