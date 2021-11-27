@@ -5,7 +5,6 @@
 #include <util/delay.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 
 #include "adc.h"
 #include "print.h"
@@ -17,9 +16,10 @@ float deadzone = 0.150f;
 int sel_index = 0;
 int started = 0;
 uint16_t tic = 0;
-char* password;
+char *password;
 int tentativas = 0;
-char* input;
+char *input;
+int input_controller[4] = {0, 0, 0, 0};
 
 uint8_t glyph[] = {0b00010000, 0b00100100, 0b11100000, 0b00100100, 0b00010000};
 
@@ -50,9 +50,29 @@ void joystick_command(char command)
         break;
 
     case 'c':
+        if (input_controller[sel_index] < 3)
+        {
+            input_controller[sel_index]++;
+        }
+        else
+        {
+            input_controller[sel_index] = 0;
+        }
+        input[sel_index] = pw_list[input_controller[sel_index]];
+
         break;
 
     case 'b':
+        if (input_controller[sel_index] > 0)
+        {
+            input_controller[sel_index]--;
+        }
+        else
+        {
+            input_controller[sel_index] = 3;
+        }
+        input[sel_index] = pw_list[input_controller[sel_index]];
+
         break;
 
     default:
@@ -123,7 +143,6 @@ ISR(INT0_vect)
     }
     else
     {
-
     }
     _delay_ms(25);
 }
@@ -143,14 +162,18 @@ int main(void)
     tentativas = 0;
     password = malloc(4);
     input = malloc(4);
-    input = "o*+$";
+    char first_char = pw_list[0];
+    input[0] = first_char;
+    input[1] = first_char;
+    input[2] = first_char;
+    input[3] = first_char;
 
     nokia_lcd_init();
     nokia_lcd_clear();
     nokia_lcd_custom(1, glyph);
 
     while (1)
-    {        
+    {
         if (started == 1)
         {
             _delay_ms(25);
@@ -172,15 +195,12 @@ int main(void)
                 }
                 else if (x < deadzone) //cima
                 {
-                    PORTD &= ~(1 << PD1);
-                    PORTD &= ~(1 << PD2);
+                    joystick_command('c');
                 }
                 else if (x > 1 - deadzone) //baixo
                 {
-                    PORTD |= (1 << PD1);
-                    PORTD &= ~(1 << PD2);
+                    joystick_command('b');
                 }
-                generate_password();
                 disp_update();
                 _delay_ms(250);
             }
@@ -194,7 +214,7 @@ int main(void)
             else
             {
                 tic++;
-            }            
+            }
         }
     }
 }
