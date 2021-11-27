@@ -30,6 +30,7 @@ void disp_update_input();
 void disp_update_selector();
 void joystick_command(char command);
 void generate_password();
+void enter_attempt();
 
 void joystick_command(char command)
 {
@@ -78,6 +79,57 @@ void joystick_command(char command)
     default:
         break;
     }
+}
+
+void enter_attempt()
+{
+    int acertos = 0;
+    int simbolos = 0;
+    int qtd_senha[4] = {0,0,0,0};
+    int qtd_input[4] = {0,0,0,0};    
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int c = 0; c < 4; c++)
+        {
+           if (password[i] == pw_list[c])
+           {
+               qtd_senha[c]++;
+           }
+        }
+        for (int c = 0; c < 4; c++)
+        {
+           if (input[i] == pw_list[c])
+           {
+               qtd_input[c]++;
+           }
+        }
+
+        if (input[i] == password[i])
+        {
+            acertos++;
+        }        
+    }
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (qtd_input[i] >= qtd_senha[i])
+        {
+            simbolos += qtd_senha[i];
+        }
+        else
+        {
+            simbolos += qtd_input[i];
+        }
+    }
+
+    print("\n");
+    print("\n");
+    print("acertos: ");
+    printint(acertos);
+    print("\n");
+    print("simbolos corretas: ");
+    printint(simbolos);
 }
 
 void disp_update()
@@ -143,6 +195,7 @@ ISR(INT0_vect)
     }
     else
     {
+        enter_attempt();
     }
     _delay_ms(25);
 }
