@@ -219,6 +219,7 @@ void score_update(int acertos, int simbolos)
     case 4:
         PORTC |= ((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
         gameover = 2;
+        started = 0;
         break;
     
     default:
@@ -248,6 +249,20 @@ void score_update(int acertos, int simbolos)
     if (tentativas == 0 && gameover == 0)
     {
         gameover = 1;
+        started = 0;
+    }
+
+    if (started == 0)
+    {
+        //regenera o seed para quando jogo recomeçar
+        if (tic == 65535)
+        {
+            tic = 0;
+        }
+        else
+        {
+            tic++;
+        }
     }
 
     disp_update();
@@ -261,20 +276,14 @@ void disp_update()
     disp_update_tentativas();
 
     if (gameover > 0)
-    {
-        if (tic == 65535)
-        {
-            tic = 0;
-        }
-        else
-        {
-            tic++;
-        }
-        started = 0;
+    {       
         if (gameover == 2)
             disp_vitoria();
         else
+        {
+            contador = 0;
             disp_derrota();
+        }            
     }
     else
     {
@@ -415,6 +424,17 @@ ISR(TIMER1_OVF_vect){
             gameover = 1;
         }
         disp_update();
+    }
+    else
+    {
+        if (gameover == 1)
+        {
+            contador++;
+            if (contador == 3)
+            {
+                restart_game();
+            }
+        }
     }
 }
 
