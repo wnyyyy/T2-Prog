@@ -11,6 +11,15 @@
 #include "usart.h"
 #include "nokia5110.h"
 
+#define LED_1_V PC5
+#define LED_2_V PC4
+#define LED_3_V PC3
+#define LED_4_V PC2
+#define LED_1_A PD7
+#define LED_2_A PD6
+#define LED_3_A PD5
+#define LED_4_A PD4
+
 char pw_list[4] = {'+', 'o', '$', '*'};
 float deadzone = 0.150f;
 int sel_index = 0;
@@ -31,6 +40,7 @@ void disp_update_selector();
 void joystick_command(char command);
 void generate_password();
 void enter_attempt();
+void score_update(int acertos, int simbolos);
 
 void joystick_command(char command)
 {
@@ -123,13 +133,63 @@ void enter_attempt()
         }
     }
 
+    simbolos = simbolos - acertos;
+
     print("\n");
     print("\n");
     print("acertos: ");
     printint(acertos);
     print("\n");
-    print("simbolos corretas: ");
+    print("simbolos corretos: ");
     printint(simbolos);
+
+    score_update(acertos, simbolos);
+}
+
+void score_update(int acertos, int simbolos)
+{
+    PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+    PORTD &= ~((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+
+    print("\naaaaa: ");
+    printint(acertos);
+    switch (acertos)
+    {
+    case 1:
+        PORTC |= (1 << LED_1_V);
+        break;
+    case 2:
+        PORTC |= ((1 << LED_1_V) | (1 << LED_2_V));
+        break;
+    case 3:
+        PORTC |= ((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V));
+        break;
+    case 4:
+        PORTC |= ((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+        break;
+    
+    default:
+        break;
+    }
+
+    switch (simbolos)
+    {
+    case 1:
+        PORTD |= (1 << LED_1_A);
+        break;
+    case 2:
+        PORTD |= (1 << LED_1_A | (1 << LED_2_A));
+        break;
+    case 3:
+        PORTD |= (1 << LED_1_A | (1 << LED_2_A) | (1 << LED_3_A));
+        break;
+    case 4:
+        PORTD |= (1 << LED_1_A | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+        break;
+    
+    default:
+        break;
+    }
 }
 
 void disp_update()
@@ -206,9 +266,15 @@ int main(void)
     adc_init();
 
     DDRD &= ~(1 << PD2);
+    DDRC |= (1 << LED_1_V | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+    DDRD |= (1 << LED_1_A | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+
     PORTD = 1 << PD2;
     EICRA = (1 << ISC01) | (1 << ISC00);
     EIMSK |= (1 << INT0);
+
+    PORTC &= ~(1 << LED_1_V | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+    PORTD &= ~(1 << LED_1_A | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
 
     sei();
 
