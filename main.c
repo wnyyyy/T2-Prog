@@ -297,10 +297,10 @@ void disp_update()
             disp_vitoria();
         else
         {
-            //seta contador para reiniciar depois de alguns segundos em caso de derrota
-            contador = 0;
             disp_derrota();
-        }            
+        }
+        //seta contador para reiniciar depois de alguns segundos em caso de derrota
+        contador = 0;
     }
     else
     {
@@ -452,10 +452,10 @@ ISR(TIMER1_OVF_vect){
         }
         disp_update();
     }
-    //se o jogo terminou em derrota, o contador serve para reiniciar o jogo após alguns segundos
+    //se o jogo terminou, o contador serve para reiniciar o jogo após alguns segundos
     else
     {
-        if (gameover == 1)
+        if (gameover > 0)
         {
             contador++;
             if (contador == 3)
