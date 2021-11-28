@@ -24,16 +24,16 @@
 #define LED_4_A PD4
 
 char pw_list[4] = {'+', 'o', '$', '*'}; // lista de caracteres q compõe a senha
-float deadzone = 0.220f; // zona q analógico nao responde 
-uint16_t tic = 0; // contador de tics q incrementa enquanto o jogo nao está executando, para gerar um número pseudorandom
-int sel_index; // index do caractere do input selecionado
-int started = 0; // 1/0 jogo iniciado
-int gameover; // 1 - derrota, 2 - vitoria
-char *password; 
+float deadzone = 0.220f;                // zona q analógico nao responde
+uint16_t tic = 0;                       // contador de tics q incrementa enquanto o jogo nao está executando, para gerar um número pseudorandom
+int sel_index;                          // index do caractere do input selecionado
+int started = 0;                        // 1/0 jogo iniciado
+int gameover;                           // 1 - derrota, 2 - vitoria
+char *password;
 int tentativas;
 char *input;
 int input_controller[4] = {0, 0, 0, 0}; //guarda qual simbolo está no input
-int contador; // timer para cada tentativa e também para reiniciar o jogo dps de game over
+int contador;                           // timer para cada tentativa e também para reiniciar o jogo dps de game over
 
 uint8_t glyph[] = {0b00010000, 0b00100100, 0b11100000, 0b00100100, 0b00010000};
 
@@ -158,25 +158,25 @@ void enter_attempt()
     contador = LIMITE_TEMPO; //reinicia timer de cada tentativa
     int acertos = 0;
     int simbolos = 0;
-    int qtd_senha[4] = {0,0,0,0};
-    int qtd_input[4] = {0,0,0,0};    
+    int qtd_senha[4] = {0, 0, 0, 0};
+    int qtd_input[4] = {0, 0, 0, 0};
 
     for (int i = 0; i < 4; i++)
     {
         //conta quantos símbolos a partir do index de {'+', 'o', '$', '*'} estão presentes no input e na senha
         for (int c = 0; c < 4; c++)
         {
-           if (password[i] == pw_list[c])
-           {
-               qtd_senha[c]++;
-           }
+            if (password[i] == pw_list[c])
+            {
+                qtd_senha[c]++;
+            }
         }
         for (int c = 0; c < 4; c++)
         {
-           if (input[i] == pw_list[c])
-           {
-               qtd_input[c]++;
-           }
+            if (input[i] == pw_list[c])
+            {
+                qtd_input[c]++;
+            }
         }
         //conta um eventual acerto
         if (input[i] == password[i])
@@ -234,7 +234,7 @@ void score_update(int acertos, int simbolos)
         gameover = 2;
         started = 0;
         break;
-    
+
     default:
         break;
     }
@@ -253,7 +253,7 @@ void score_update(int acertos, int simbolos)
     case 4:
         PORTD |= (1 << LED_1_A | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
         break;
-    
+
     default:
         break;
     }
@@ -292,7 +292,7 @@ void disp_update()
 
     // se o jogo terminou, mandar tela de vitória ou derrota
     if (gameover > 0)
-    {       
+    {
         if (gameover == 2)
             disp_vitoria();
         else
@@ -431,19 +431,20 @@ ISR(INT0_vect)
     }
     else
     {
-    //caso contrário, o botão manda uma tentativa
-        enter_attempt(); 
+        //caso contrário, o botão manda uma tentativa
+        enter_attempt();
     }
     _delay_ms(25);
 }
 
 //tratamento para o contador
-ISR(TIMER1_OVF_vect){
+ISR(TIMER1_OVF_vect)
+{
     // se o jogo já iniciou, conta o tempo restante para a tentativa
     if (started == 1)
     {
         contador--;
-        TCNT1  = 65536 - TIMER_CLK;
+        TCNT1 = 65536 - TIMER_CLK;
         //se chegar em 0, o jogo acaba por limite de tempo
         if (contador == 0)
         {
@@ -472,11 +473,11 @@ int main(void)
     TCCR2A = 0x00;
     TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20);
 
-	TCCR1A = 0;
-	TCCR1B = 0;
-	TCNT1  = 65536 - TIMER_CLK;
-	TCCR1B |= (1 << CS12);
-	TIMSK1 |= (1 << TOIE1);
+    TCCR1A = 0;
+    TCCR1B = 0;
+    TCNT1 = 65536 - TIMER_CLK;
+    TCCR1B |= (1 << CS12);
+    TIMSK1 |= (1 << TOIE1);
 
     USART_Init();
     adc_init();
@@ -496,11 +497,11 @@ int main(void)
 
     password = malloc(4);
     input = malloc(4);
-    
+
     setup_game();
     nokia_lcd_init();
     nokia_lcd_clear();
-    nokia_lcd_custom(1, glyph);    
+    nokia_lcd_custom(1, glyph);
 
     while (1)
     {
