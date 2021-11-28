@@ -24,6 +24,7 @@ char pw_list[4] = {'+', 'o', '$', '*'};
 float deadzone = 0.150f;
 int sel_index = 0;
 int started = 0;
+int gameover = 0;
 uint16_t tic = 0;
 char *password;
 int tentativas = 0;
@@ -41,6 +42,7 @@ void joystick_command(char command);
 void generate_password();
 void enter_attempt();
 void score_update(int acertos, int simbolos);
+void disp_vitoria();
 
 void joystick_command(char command)
 {
@@ -91,6 +93,12 @@ void joystick_command(char command)
     }
 }
 
+void disp_vitoria()
+{
+    nokia_lcd_set_cursor(16, 18);
+    nokia_lcd_write_string("Vitoria!!", 1);
+}
+
 void enter_attempt()
 {
     int acertos = 0;
@@ -118,7 +126,7 @@ void enter_attempt()
         if (input[i] == password[i])
         {
             acertos++;
-        }        
+        }
     }
 
     for (int i = 0; i < 4; i++)
@@ -151,8 +159,6 @@ void score_update(int acertos, int simbolos)
     PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
     PORTD &= ~((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
 
-    print("\naaaaa: ");
-    printint(acertos);
     switch (acertos)
     {
     case 1:
@@ -166,6 +172,8 @@ void score_update(int acertos, int simbolos)
         break;
     case 4:
         PORTC |= ((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+        gameover = 2;
+        disp_update();
         break;
     
     default:
@@ -196,9 +204,18 @@ void disp_update()
 {
     nokia_lcd_clear();
 
-    disp_update_selector();
     disp_update_tentativas();
-    disp_update_input();
+
+    if (gameover > 0)
+    {
+        if (gameover == 2)
+            disp_vitoria();
+    }
+    else
+    {
+        disp_update_selector();
+        disp_update_input();
+    }    
 
     nokia_lcd_render();
 }
