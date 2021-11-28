@@ -338,7 +338,7 @@ int main(void)
                     joystick_command('b');
                 }
                 disp_update();
-                _delay_ms(250);
+                _delay_ms(400);
             }
         }
         else
