@@ -227,6 +227,8 @@ void score_update(int acertos, int simbolos)
 
 void disp_update()
 {
+    cli();
+    
     nokia_lcd_clear();
     disp_update_tentativas();
 
@@ -244,7 +246,9 @@ void disp_update()
         disp_update_input();
         disp_update_timer();
         nokia_lcd_render();
-    }    
+    }
+
+    sei();
 }
 
 void led_derrota()
