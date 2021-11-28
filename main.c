@@ -448,6 +448,7 @@ ISR(TIMER1_OVF_vect){
         if (contador == 0)
         {
             gameover = 1;
+            started = 0;
         }
         disp_update();
     }
