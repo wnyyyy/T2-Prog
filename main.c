@@ -371,10 +371,10 @@ void led_vitoria()
 
 void disp_update_timer()
 {
-    nokia_lcd_set_cursor(12, 40);
+    nokia_lcd_set_cursor(17, 40);
     nokia_lcd_write_string("Tempo:", 1);
     char strTempo[2];
-    nokia_lcd_set_cursor(50, 40);
+    nokia_lcd_set_cursor(55, 40);
     sprintf(strTempo, "%d", contador);
     nokia_lcd_write_string(strTempo, 1);
 }
