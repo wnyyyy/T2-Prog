@@ -21,7 +21,7 @@
 #define LED_4_A PD4
 
 char pw_list[4] = {'+', 'o', '$', '*'};
-float deadzone = 0.150f;
+float deadzone = 0.220f;
 int sel_index = 0;
 int started = 0;
 int gameover = 0;
