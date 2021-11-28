@@ -23,17 +23,17 @@
 #define LED_3_A PD5
 #define LED_4_A PD4
 
-char pw_list[4] = {'+', 'o', '$', '*'};
-float deadzone = 0.220f;
-uint16_t tic = 0;
-int sel_index;
-int started = 0;
-int gameover;
-char *password;
+char pw_list[4] = {'+', 'o', '$', '*'}; // lista de caracteres q compõe a senha
+float deadzone = 0.220f; // zona q analógico nao responde 
+uint16_t tic = 0; // contador de tics q incrementa enquanto o jogo nao está executando, para gerar um número pseudorandom
+int sel_index; // index do caractere do input selecionado
+int started = 0; // 1/0 jogo iniciado
+int gameover; // 1 - derrota, 2 - vitoria
+char *password; 
 int tentativas;
 char *input;
-int input_controller[4] = {0, 0, 0, 0};
-int contador;
+int input_controller[4] = {0, 0, 0, 0}; //guarda qual simbolo está no input
+int contador; // timer para cada tentativa e também para reiniciar o jogo dps de game over
 
 uint8_t glyph[] = {0b00010000, 0b00100100, 0b11100000, 0b00100100, 0b00010000};
 
@@ -52,17 +52,19 @@ void disp_derrota();
 void led_vitoria();
 void setup_game();
 
+// controlador para o joystick
 void joystick_command(char command)
 {
     switch (command)
     {
+    // move input para esquerda
     case 'e':
         if (sel_index > 0)
             sel_index--;
         else
             sel_index = 3;
         break;
-
+    // move input para direita
     case 'd':
         if (sel_index < 3)
             sel_index++;
@@ -70,6 +72,7 @@ void joystick_command(char command)
             sel_index = 0;
         break;
 
+    //muda caractere selecionado do input para o proximo caractere
     case 'c':
         if (input_controller[sel_index] < 3)
         {
@@ -83,6 +86,7 @@ void joystick_command(char command)
 
         break;
 
+    //muda caractere selecionado do input para o caractere anterior
     case 'b':
         if (input_controller[sel_index] > 0)
         {
@@ -101,6 +105,7 @@ void joystick_command(char command)
     }
 }
 
+//seta variaveis necessárias para o jogo
 void setup_game()
 {
     tentativas = LIMITE_TENTATIVAS;
@@ -119,6 +124,7 @@ void setup_game()
     disp_update();
 }
 
+//gera uma senha nova e prepara o jogo
 void restart_game()
 {
     started = 1;
@@ -126,6 +132,7 @@ void restart_game()
     setup_game();
 }
 
+//mostra tela de vitória
 void disp_vitoria()
 {
     nokia_lcd_set_cursor(16, 18);
@@ -134,6 +141,7 @@ void disp_vitoria()
     led_vitoria();
 }
 
+//mostra tela de game over
 void disp_derrota()
 {
     nokia_lcd_set_cursor(6, 15);
@@ -144,9 +152,10 @@ void disp_derrota()
     led_derrota();
 }
 
+//aplica uma tentativa
 void enter_attempt()
 {
-    contador = LIMITE_TEMPO;
+    contador = LIMITE_TEMPO; //reinicia timer de cada tentativa
     int acertos = 0;
     int simbolos = 0;
     int qtd_senha[4] = {0,0,0,0};
@@ -154,6 +163,7 @@ void enter_attempt()
 
     for (int i = 0; i < 4; i++)
     {
+        //conta quantos símbolos a partir do index de {'+', 'o', '$', '*'} estão presentes no input e na senha
         for (int c = 0; c < 4; c++)
         {
            if (password[i] == pw_list[c])
@@ -168,13 +178,14 @@ void enter_attempt()
                qtd_input[c]++;
            }
         }
-
+        //conta um eventual acerto
         if (input[i] == password[i])
         {
             acertos++;
         }
     }
 
+    //simbolos em comum é o menor valor de cada index para input e senha
     for (int i = 0; i < 4; i++)
     {
         if (qtd_input[i] >= qtd_senha[i])
@@ -187,6 +198,7 @@ void enter_attempt()
         }
     }
 
+    //desconsiderar os simbolos corretos q estao em posiçao correta, para facilitar
     simbolos = simbolos - acertos;
 
     print("\n");
@@ -200,6 +212,7 @@ void enter_attempt()
     score_update(acertos, simbolos);
 }
 
+// acende leds de acordo com acertos e posições, seta variaveis necessárias para caso o jogo termine em derrota por tentativa ou vitória
 void score_update(int acertos, int simbolos)
 {
     PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
@@ -254,7 +267,7 @@ void score_update(int acertos, int simbolos)
 
     if (started == 0)
     {
-        //regenera o seed para quando jogo recomeçar
+        //incrementa o seed para evitar senha duplicada caso reinicie o jogo muito rápido
         if (tic == 65535)
         {
             tic = 0;
@@ -268,31 +281,37 @@ void score_update(int acertos, int simbolos)
     disp_update();
 }
 
+//atualiza o display
 void disp_update()
 {
+    //pausa interrupções para evitar bugs visuais
     cli();
 
     nokia_lcd_clear();
     disp_update_tentativas();
 
+    // se o jogo terminou, mandar tela de vitória ou derrota
     if (gameover > 0)
     {       
         if (gameover == 2)
             disp_vitoria();
         else
         {
+            //seta contador para reiniciar depois de alguns segundos em caso de derrota
             contador = 0;
             disp_derrota();
         }            
     }
     else
     {
+        //caso ainda tenha jogo, atualizar oq for necessário
         disp_update_selector();
         disp_update_input();
         disp_update_timer();
         nokia_lcd_render();
     }
 
+    //retoma interrupçoes
     sei();
 }
 
@@ -386,45 +405,53 @@ void disp_update_input()
     }
 }
 
+//gera uma senha com base num seed
 void generate_password()
 {
     print("\n\nseed: ");
     printint(tic);
 
     srandom(tic);
-    password[0] = pw_list[random() % 4];
-    password[1] = pw_list[random() % 4];
-    password[2] = pw_list[random() % 4];
-    password[3] = pw_list[random() % 4];
+    for (int i = 0; i < 4; i++)
+    {
+        password[i] = pw_list[random() % 4];
+    }
 
     print("\npassword: ");
     print(password);
 }
 
+//tratamento para o botão
 ISR(INT0_vect)
 {
+    //se o jogo não foi iniciado ainda, o botão reinicia (ou começa) o jogo
     if (started == 0)
     {
         restart_game();
     }
     else
     {
+    //caso contrário, o botão manda uma tentativa
         enter_attempt(); 
     }
     _delay_ms(25);
 }
 
+//tratamento para o contador
 ISR(TIMER1_OVF_vect){
+    // se o jogo já iniciou, conta o tempo restante para a tentativa
     if (started == 1)
     {
         contador--;
         TCNT1  = 65536 - TIMER_CLK;
+        //se chegar em 0, o jogo acaba por limite de tempo
         if (contador == 0)
         {
             gameover = 1;
         }
         disp_update();
     }
+    //se o jogo terminou em derrota, o contador serve para reiniciar o jogo após alguns segundos
     else
     {
         if (gameover == 1)
@@ -509,6 +536,7 @@ int main(void)
         }
         else
         {
+            //conta tics enquanto o jogo iniciou para gerar uma senha pseudoaleatória
             if (tic == 65535)
             {
                 tic = 0;
