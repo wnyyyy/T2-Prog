@@ -27,7 +27,7 @@ int started = 0;
 int gameover = 0;
 uint16_t tic = 0;
 char *password;
-int tentativas = 0;
+int tentativas = 10;
 char *input;
 int input_controller[4] = {0, 0, 0, 0};
 
@@ -43,6 +43,8 @@ void generate_password();
 void enter_attempt();
 void score_update(int acertos, int simbolos);
 void disp_vitoria();
+void disp_derrota();
+void led_vitoria();
 
 void joystick_command(char command)
 {
@@ -97,6 +99,18 @@ void disp_vitoria()
 {
     nokia_lcd_set_cursor(16, 18);
     nokia_lcd_write_string("Vitoria!!", 1);
+    nokia_lcd_render();
+    led_vitoria();
+}
+
+void disp_derrota()
+{
+    nokia_lcd_set_cursor(6, 13);
+    nokia_lcd_write_string("Game", 2);
+    nokia_lcd_set_cursor(20, 32);
+    nokia_lcd_write_string("Over!!", 2);
+    nokia_lcd_render();
+    led_derrota();
 }
 
 void enter_attempt()
@@ -173,7 +187,6 @@ void score_update(int acertos, int simbolos)
     case 4:
         PORTC |= ((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
         gameover = 2;
-        disp_update();
         break;
     
     default:
@@ -198,6 +211,14 @@ void score_update(int acertos, int simbolos)
     default:
         break;
     }
+
+    tentativas--;
+    if (tentativas == 0 && gameover == 0)
+    {
+        gameover = 1;
+    }
+
+    disp_update();
 }
 
 void disp_update()
@@ -210,14 +231,69 @@ void disp_update()
     {
         if (gameover == 2)
             disp_vitoria();
+        else
+            disp_derrota();
     }
     else
     {
         disp_update_selector();
         disp_update_input();
+        nokia_lcd_render();
     }    
+}
 
-    nokia_lcd_render();
+void led_derrota()
+{
+    PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+    PORTD &= ~((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+
+    PORTC |= (1 << LED_4_V);
+    PORTD |= (1 << LED_1_A);
+    _delay_ms(100);
+    PORTC |= (1 << LED_3_V);
+    PORTD |= (1 << LED_2_A);
+    _delay_ms(100);
+    PORTC |= (1 << LED_2_V);
+    PORTD |= (1 << LED_3_A);
+    _delay_ms(100);
+    PORTC |= (1 << LED_1_V);
+    PORTD |= (1 << LED_4_A);
+    _delay_ms(100);
+    PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+    PORTD &= ~((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+    _delay_ms(200);
+}
+
+void led_vitoria()
+{
+    PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+    PORTD &= ~((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+
+    PORTC |= (1 << LED_1_V);
+    PORTD |= (1 << LED_4_A);
+    _delay_ms(100);
+    PORTC |= (1 << LED_2_V);
+    PORTD |= (1 << LED_3_A);
+    _delay_ms(100);
+    PORTC |= (1 << LED_3_V);
+    PORTD |= (1 << LED_2_A);
+    _delay_ms(100);
+    PORTC |= (1 << LED_4_V);
+    PORTD |= (1 << LED_1_A);
+    _delay_ms(100);
+    PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+    PORTD &= ~((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+    _delay_ms(400);
+
+    for (int i = 0; i < 3; i++)
+    {
+        PORTC |= ((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+        PORTD |= ((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+        _delay_ms(400);
+        PORTC &= ~((1 << LED_1_V) | (1 << LED_2_V) | (1 << LED_3_V) | (1 << LED_4_V));
+        PORTD &= ~((1 << LED_1_A) | (1 << LED_2_A) | (1 << LED_3_A) | (1 << LED_4_A));
+        _delay_ms(400);
+    }
 }
 
 void disp_update_selector()
@@ -295,7 +371,6 @@ int main(void)
 
     sei();
 
-    tentativas = 0;
     password = malloc(4);
     input = malloc(4);
     char first_char = pw_list[0];
