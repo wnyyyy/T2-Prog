@@ -11,6 +11,7 @@
 #include "usart.h"
 #include "nokia5110.h"
 
+#define TIMER_CLK F_CPU / 256
 #define LED_1_V PC5
 #define LED_2_V PC4
 #define LED_3_V PC3
@@ -30,6 +31,7 @@ char *password;
 int tentativas = 10;
 char *input;
 int input_controller[4] = {0, 0, 0, 0};
+int contador = 30;
 
 uint8_t glyph[] = {0b00010000, 0b00100100, 0b11100000, 0b00100100, 0b00010000};
 
@@ -38,6 +40,7 @@ void disp_show_password();
 void disp_update();
 void disp_update_input();
 void disp_update_selector();
+void disp_update_timer();
 void joystick_command(char command);
 void generate_password();
 void enter_attempt();
@@ -45,6 +48,7 @@ void score_update(int acertos, int simbolos);
 void disp_vitoria();
 void disp_derrota();
 void led_vitoria();
+void restart_game();
 
 void joystick_command(char command)
 {
@@ -105,7 +109,7 @@ void disp_vitoria()
 
 void disp_derrota()
 {
-    nokia_lcd_set_cursor(6, 13);
+    nokia_lcd_set_cursor(6, 15);
     nokia_lcd_write_string("Game", 2);
     nokia_lcd_set_cursor(20, 32);
     nokia_lcd_write_string("Over!!", 2);
@@ -224,11 +228,11 @@ void score_update(int acertos, int simbolos)
 void disp_update()
 {
     nokia_lcd_clear();
-
     disp_update_tentativas();
 
     if (gameover > 0)
     {
+        started = 0;
         if (gameover == 2)
             disp_vitoria();
         else
@@ -238,6 +242,7 @@ void disp_update()
     {
         disp_update_selector();
         disp_update_input();
+        disp_update_timer();
         nokia_lcd_render();
     }    
 }
@@ -296,19 +301,29 @@ void led_vitoria()
     }
 }
 
+void disp_update_timer()
+{
+    nokia_lcd_set_cursor(12, 40);
+    nokia_lcd_write_string("Tempo:", 1);
+    char strTempo[2];
+    nokia_lcd_set_cursor(50, 40);
+    sprintf(strTempo, "%d", contador);
+    nokia_lcd_write_string(strTempo, 1);
+}
+
 void disp_update_selector()
 {
-    nokia_lcd_set_cursor(sel_index * 20 + 7, 34);
+    nokia_lcd_set_cursor(sel_index * 20 + 7, 30);
     nokia_lcd_write_char('^', 2);
 }
 
 void disp_update_tentativas()
 {
-    nokia_lcd_set_cursor(0, 0);
+    nokia_lcd_set_cursor(2, 2);
     nokia_lcd_write_string("Tentativas:", 1);
-    nokia_lcd_drawline(0, 9, 84, 9);
+    nokia_lcd_drawline(0, 11, 84, 11);
     char strTentativas[2];
-    nokia_lcd_set_cursor(68, 0);
+    nokia_lcd_set_cursor(68, 2);
     sprintf(strTentativas, "%d", tentativas);
     nokia_lcd_write_string(strTentativas, 1);
 }
@@ -317,7 +332,7 @@ void disp_update_input()
 {
     for (int i = 0; i < 4; i++)
     {
-        nokia_lcd_set_cursor(i * 20 + 7, 18);
+        nokia_lcd_set_cursor(i * 20 + 7, 14);
         nokia_lcd_write_char(input[i], 2);
     }
 }
@@ -348,13 +363,43 @@ ISR(INT0_vect)
     }
     else
     {
-        enter_attempt();
+        if (gameover > 0)
+        {
+
+        }
+        else
+        {
+            enter_attempt();            
+        }
     }
     _delay_ms(25);
 }
 
+ISR(TIMER1_OVF_vect){
+    if (started == 1)
+    {
+        contador--;
+        TCNT1  = 65536 - TIMER_CLK;
+        if (contador == 0)
+        {
+            gameover = 1;
+        }
+        disp_update();
+    }
+}
+
 int main(void)
 {
+    cli();
+    TCCR2A = 0x00;
+    TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20);
+
+	TCCR1A = 0;
+	TCCR1B = 0;
+	TCNT1  = 65536 - TIMER_CLK;
+	TCCR1B |= (1 << CS12);
+	TIMSK1 |= (1 << TOIE1);
+
     USART_Init();
     adc_init();
 
