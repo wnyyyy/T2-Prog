@@ -11,6 +11,8 @@
 #include "usart.h"
 #include "nokia5110.h"
 
+#define LIMITE_TEMPO 30
+#define LIMITE_TENTATIVAS 10
 #define TIMER_CLK F_CPU / 256
 #define LED_1_V PC5
 #define LED_2_V PC4
@@ -23,15 +25,15 @@
 
 char pw_list[4] = {'+', 'o', '$', '*'};
 float deadzone = 0.220f;
-int sel_index = 0;
-int started = 0;
-int gameover = 0;
 uint16_t tic = 0;
+int sel_index;
+int started = 0;
+int gameover;
 char *password;
-int tentativas = 10;
+int tentativas;
 char *input;
 int input_controller[4] = {0, 0, 0, 0};
-int contador = 30;
+int contador;
 
 uint8_t glyph[] = {0b00010000, 0b00100100, 0b11100000, 0b00100100, 0b00010000};
 
@@ -48,7 +50,7 @@ void score_update(int acertos, int simbolos);
 void disp_vitoria();
 void disp_derrota();
 void led_vitoria();
-void restart_game();
+void setup_game();
 
 void joystick_command(char command)
 {
@@ -99,6 +101,31 @@ void joystick_command(char command)
     }
 }
 
+void setup_game()
+{
+    tentativas = LIMITE_TENTATIVAS;
+    contador = LIMITE_TEMPO;
+    gameover = 0;
+    sel_index = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        input_controller[i] = 0;
+    }
+    char first_char = pw_list[0];
+    for (int i = 0; i < 4; i++)
+    {
+        input[i] = first_char;
+    }
+    disp_update();
+}
+
+void restart_game()
+{
+    started = 1;
+    generate_password();
+    setup_game();
+}
+
 void disp_vitoria()
 {
     nokia_lcd_set_cursor(16, 18);
@@ -119,6 +146,7 @@ void disp_derrota()
 
 void enter_attempt()
 {
+    contador = LIMITE_TEMPO;
     int acertos = 0;
     int simbolos = 0;
     int qtd_senha[4] = {0,0,0,0};
@@ -228,12 +256,20 @@ void score_update(int acertos, int simbolos)
 void disp_update()
 {
     cli();
-    
+
     nokia_lcd_clear();
     disp_update_tentativas();
 
     if (gameover > 0)
     {
+        if (tic == 65535)
+        {
+            tic = 0;
+        }
+        else
+        {
+            tic++;
+        }
         started = 0;
         if (gameover == 2)
             disp_vitoria();
@@ -343,7 +379,7 @@ void disp_update_input()
 
 void generate_password()
 {
-    print("\nseed: ");
+    print("\n\nseed: ");
     printint(tic);
 
     srandom(tic);
@@ -356,25 +392,15 @@ void generate_password()
     print(password);
 }
 
-// Rotina de tratamento da INT0
 ISR(INT0_vect)
 {
     if (started == 0)
     {
-        generate_password();
-        started = 1;
-        disp_update();
+        restart_game();
     }
     else
     {
-        if (gameover > 0)
-        {
-
-        }
-        else
-        {
-            enter_attempt();            
-        }
+        enter_attempt(); 
     }
     _delay_ms(25);
 }
@@ -422,15 +448,11 @@ int main(void)
 
     password = malloc(4);
     input = malloc(4);
-    char first_char = pw_list[0];
-    input[0] = first_char;
-    input[1] = first_char;
-    input[2] = first_char;
-    input[3] = first_char;
-
+    
+    setup_game();
     nokia_lcd_init();
     nokia_lcd_clear();
-    nokia_lcd_custom(1, glyph);
+    nokia_lcd_custom(1, glyph);    
 
     while (1)
     {
